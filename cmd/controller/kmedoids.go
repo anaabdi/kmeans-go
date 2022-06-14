@@ -36,11 +36,19 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 	req.RangeMin, _ = strconv.Atoi(r.FormValue("range_min"))
 	req.RangeMax, _ = strconv.Atoi(r.FormValue("range_max"))
 	req.KExact, _ = strconv.Atoi(r.FormValue("k_exact"))
+	req.InitialCentroidRowIDs = getRowIDsFromString(r.FormValue("initial_centroid_row_ids"))
 
 	if req.KExact < 2 || req.KExact > 9 {
 		log.Printf("Harap sertakan range min dan max nya")
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write([]byte("Harap sertakan range min dan max nya\n"))
+		return
+	}
+
+	if len(req.InitialCentroidRowIDs) != req.KExact {
+		log.Printf("banyak initial centroids tidak sama dengan nilai K")
+		rw.WriteHeader(http.StatusBadRequest)
+		rw.Write([]byte("banyak initial centroids tidak sama dengan nilai K\n"))
 		return
 	}
 
@@ -63,22 +71,32 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 	k := req.KExact
 	fmt.Println("K: ", k)
 
-	c1, indexChosen := getInitialRandomCentroid(mainNodes)
+	//c1, indexChosen := getInitialRandomCentroid(mainNodes)
 
 	//c1, c2 := getInitialCentroid(mainNodes)
 
 	initialCentroids := make(map[string]string, k)
 
 	mapOfCentroid := make(map[string]Node, k)
-	for i := 0; i < k; i++ {
+	for i, rowID := range req.InitialCentroidRowIDs {
 		id := fmt.Sprintf("C%d", i+1)
-		if i == 0 {
-			mapOfCentroid[id] = c1
-			initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c1.Humidity, c1.Temperature, c1.StepCount)
-		} else {
-			c := mainNodes[indexChosen+1]
-			initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c.Humidity, c.Temperature, c.StepCount)
-			mapOfCentroid[id] = c
+		// if i == 0 {
+		// 	mapOfCentroid[id] = c1
+		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c1.Humidity, c1.Temperature, c1.StepCount)
+		// } else {
+		// 	c := mainNodes[indexChosen+1]
+		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c.Humidity, c.Temperature, c.StepCount)
+		// 	mapOfCentroid[id] = c
+		// }
+
+		for _, node := range mainNodes {
+			if node.ID == rowID {
+				initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f",
+					node.Humidity, node.Temperature, node.StepCount)
+
+				mapOfCentroid[id] = node
+				break
+			}
 		}
 
 		// if i == 0 {
@@ -88,6 +106,13 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 		// 	mapOfCentroid[id] = c2
 		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c2.Humidity, c2.Temperature, c2.StepCount)
 		// }
+	}
+
+	if len(mapOfCentroid) != len(req.InitialCentroidRowIDs) {
+		log.Printf("Ada row id tidak ditemukan sebagai pilihan centroid awal")
+		rw.WriteHeader(http.StatusBadRequest)
+		rw.Write([]byte("Ada row id tidak ditemukan sebagai pilihan centroid awal\n"))
+		return
 	}
 
 	var mapOfClusterResults map[string][]Node
