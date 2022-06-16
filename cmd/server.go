@@ -11,18 +11,20 @@ import (
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/gocarina/gocsv"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog/log"
 )
 
 type Node struct {
-	ID          int
-	Humidity    float64
-	Temperature float64
-	StepCount   float64
-	StressLevel float64
-	Result      map[string]float64
-	ClusterCode string
+	ID           int                `json:"id"`
+	Humidity     float64            `json:"humidity"`
+	Temperature  float64            `json:"temperature"`
+	StepCount    float64            `json:"step_count"`
+	StressLevel  float64            `json:"-"`
+	Result       map[string]float64 `json:"-"`
+	ChosenResult float64            `json:"-"`
+	ClusterCode  string             `json:"-"`
 }
 
 func main() {
@@ -41,8 +43,28 @@ func main() {
 
 	router.Post("/kmeans", controller.KMeansController)
 	router.Post("/kmedoids", controller.KMedoidsController)
+	router.Post("/upload-dataset", controller.UploadDataset)
 
 	serve(router)
+}
+
+func initData() {
+	f, err := os.OpenFile("Stress-Lysis.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	var mainNodes []Node
+
+	if err := gocsv.UnmarshalFile(f, &mainNodes); err != nil { // Load clients from file
+		panic(err)
+	}
+
+	for k := range mainNodes {
+		//fmt.Println("node: ", mainNodes[k])
+		mainNodes[k].ID = k + 1
+	}
 }
 
 func serve(handler http.Handler) {

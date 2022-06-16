@@ -6,23 +6,20 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gocarina/gocsv"
 )
 
 type Node struct {
-	ID           int
-	Humidity     float64
-	Temperature  float64
-	StepCount    float64
-	StressLevel  float64
-	Result       map[string]float64
-	ChosenResult float64
-	ClusterCode  string
+	ID           int                `json:"id" csv:"-"`
+	Humidity     float64            `json:"humidity" csv:"Humidity"`
+	Temperature  float64            `json:"temperature" csv:"Temperature"`
+	StepCount    float64            `json:"step_count" csv:"Step count"`
+	StressLevel  float64            `json:"-" csv:"-"`
+	Result       map[string]float64 `json:"-" csv:"-"`
+	ChosenResult float64            `json:"-" csv:"-"`
+	ClusterCode  string             `json:"-" csv:"-"`
 }
 
 type KMeansRequest struct {
@@ -80,22 +77,24 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f, err := os.OpenFile("Stress-Lysis.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
+	log.Println("length of data: ", len(mainNodes))
 
-	var mainNodes []Node
+	// f, err := os.OpenFile("Stress-Lysis.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer f.Close()
 
-	if err := gocsv.UnmarshalFile(f, &mainNodes); err != nil { // Load clients from file
-		panic(err)
-	}
+	// var mainNodes []Node
 
-	for k := range mainNodes {
-		//fmt.Println("node: ", mainNodes[k])
-		mainNodes[k].ID = k + 1
-	}
+	// if err := gocsv.UnmarshalFile(f, &mainNodes); err != nil { // Load clients from file
+	// 	panic(err)
+	// }
+
+	// for k := range mainNodes {
+	// 	//fmt.Println("node: ", mainNodes[k])
+	// 	mainNodes[k].ID = k + 1
+	// }
 
 	k := req.KExact
 	fmt.Println("K: ", k)
@@ -120,6 +119,7 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 
 		for _, node := range mainNodes {
 			if node.ID == rowID {
+				log.Println("step count: ", node.StepCount)
 				initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f",
 					node.Humidity, node.Temperature, node.StepCount)
 

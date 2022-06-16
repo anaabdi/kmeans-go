@@ -6,12 +6,9 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gocarina/gocsv"
 )
 
 type KMedoidsRequest struct {
@@ -50,22 +47,6 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write([]byte("banyak initial centroids tidak sama dengan nilai K\n"))
 		return
-	}
-
-	f, err := os.OpenFile("Stress-Lysis.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	var mainNodes []Node
-
-	if err := gocsv.UnmarshalFile(f, &mainNodes); err != nil { // Load clients from file
-		panic(err)
-	}
-
-	for k := range mainNodes {
-		mainNodes[k].ID = k + 1
 	}
 
 	k := req.KExact
