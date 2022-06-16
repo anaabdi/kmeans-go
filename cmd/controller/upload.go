@@ -77,7 +77,9 @@ func UploadDataset(rw http.ResponseWriter, r *http.Request) {
 }
 
 var (
-	mainNodes []Node
+	mainNodes    []Node
+	nodeKMeans   []Node
+	nodeKMedoids []Node
 )
 
 func saveData(filename string) error {
@@ -96,6 +98,9 @@ func saveData(filename string) error {
 		//fmt.Println("node: ", mainNodes[k])
 		mainNodes[k].ID = k + 1
 	}
+
+	nodeKMeans = mainNodes
+	nodeKMedoids = mainNodes
 
 	return nil
 

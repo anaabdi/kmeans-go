@@ -99,6 +99,8 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 	k := req.KExact
 	fmt.Println("K: ", k)
 
+	mainNodes := nodeKMeans
+
 	// c1, indexChosen := getInitialRandomCentroid(mainNodes)
 
 	//c1, c2 := getInitialCentroid(mainNodes)
