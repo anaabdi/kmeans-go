@@ -44,6 +44,7 @@ func main() {
 	router.Post("/kmeans", controller.KMeansController)
 	router.Post("/kmedoids", controller.KMedoidsController)
 	router.Post("/upload-dataset", controller.UploadDataset)
+	router.Get("/datasets", controller.ListDataController)
 
 	serve(router)
 }
