@@ -53,7 +53,17 @@ func UploadDataset(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte("Gagal membaca dataset\n"))
 		return
 	}
-	defer tempFile.Close()
+
+	filename := tempFile.Name()
+
+	defer func(f string) {
+		tempFile.Close()
+
+		e := os.Remove(f)
+		if e != nil {
+			log.Printf("Gagal menghapus file %s", err.Error())
+		}
+	}(filename)
 
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -65,12 +75,11 @@ func UploadDataset(rw http.ResponseWriter, r *http.Request) {
 	// write this byte array to our temporary file
 	tempFile.Write(fileBytes)
 
-	if err := saveData(tempFile.Name()); err != nil {
+	if err := saveData(filename); err != nil {
 		log.Printf("Gagal memproses data %s", err.Error())
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write([]byte("Gagal memproses dataset\n"))
 		return
-
 	}
 
 	Write(rw, http.StatusOK, "berhasil simpan data")
