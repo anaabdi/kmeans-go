@@ -99,9 +99,15 @@ func saveData(filename string) error {
 	}
 	defer f.Close()
 
+	mainNodes = []Node{}
+	nodeKMeans = []Node{}
+	nodeKMedoids = []Node{}
+
 	if err := gocsv.UnmarshalFile(f, &mainNodes); err != nil { // Load clients from file
 		return err
 	}
+
+	fmt.Println("len(mainNodes): ", len(mainNodes))
 
 	for k := range mainNodes {
 		//fmt.Println("node: ", mainNodes[k])

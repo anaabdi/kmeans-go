@@ -54,23 +54,11 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 
 	mainNodes := nodeKMedoids
 
-	//c1, indexChosen := getInitialRandomCentroid(mainNodes)
-
-	//c1, c2 := getInitialCentroid(mainNodes)
-
 	initialCentroids := make(map[string]string, k)
 
 	mapOfCentroid := make(map[string]Node, k)
 	for i, rowID := range req.InitialCentroidRowIDs {
 		id := fmt.Sprintf("C%d", i+1)
-		// if i == 0 {
-		// 	mapOfCentroid[id] = c1
-		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c1.Humidity, c1.Temperature, c1.StepCount)
-		// } else {
-		// 	c := mainNodes[indexChosen+1]
-		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c.Humidity, c.Temperature, c.StepCount)
-		// 	mapOfCentroid[id] = c
-		// }
 
 		for _, node := range mainNodes {
 			if node.ID == rowID {
@@ -81,14 +69,6 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-
-		// if i == 0 {
-		// 	mapOfCentroid[id] = c1
-		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c1.Humidity, c1.Temperature, c1.StepCount)
-		// } else {
-		// 	mapOfCentroid[id] = c2
-		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c2.Humidity, c2.Temperature, c2.StepCount)
-		// }
 	}
 
 	if len(mapOfCentroid) != len(req.InitialCentroidRowIDs) {
@@ -141,9 +121,9 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 			mapOfClusterResults[chosenClusterCode] = append(
 				mapOfClusterResults[chosenClusterCode], mainNodes[k])
 
-			fmt.Printf("result chosen: %.2f %.2f %.2f %s %.2f \n", mainNodes[k].Humidity,
-				mainNodes[k].Result["C1"], mainNodes[k].Result["C2"],
-				chosenClusterCode, mainNodes[k].ChosenResult)
+			// fmt.Printf("result chosen: %.2f %.2f %.2f %s %.2f \n", mainNodes[k].Humidity,
+			// 	mainNodes[k].Result["C1"], mainNodes[k].Result["C2"],
+			// 	chosenClusterCode, mainNodes[k].ChosenResult)
 
 			totalResult += mainNodes[k].ChosenResult
 		}
@@ -158,10 +138,6 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 		subResult := totalResult - previousTotalResult
 		fmt.Println("end of iteration: ", iteration)
 		if subResult <= 0 {
-			// Pilih centroid
-			// newCentroid1, newCentroid2 := getSecondCentroid(mainNodes)
-			// mapOfCentroid["C1"] = newCentroid1
-			// mapOfCentroid["C2"] = newCentroid2
 
 			for clusterNode, node := range mapOfCentroid {
 				mapOfCentroid[clusterNode] = getNewCentroidKMedoids(mainNodes, node.ID)
@@ -203,17 +179,25 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 		resp.Results[k] = strings.Join(node, ", ")
 	}
 
-	/*
-		# k = 2
-		# pilih centroid secara acak, C1 dan C2
-		# cek jarak masing2 data dari row 1 ke C1 dan C2
-		# sqroot (h1-c1)2 + (t1-c1)2 + (s1-c1)2
-		# sqroot (h1-c2)2 + (t1-c2)2 + (s1-c2)2
-		# hasil nya ambil yang kecil, C1 atau C2 dari masing2 row
-		# cari nilai centroid baru
-		# C1 = average of sum
-		# C2 = average of sum
-	*/
+	// for k, nodes := range storedIterationResult[iteration] {
+	// 	var node []string
+	// 	for _, v := range nodes {
+	// 		node = append(node, strconv.Itoa(v.ID))
+	// 	}
+
+	// 	fmt.Println("Cluster: ", k, node)
+	// 	//resp.Results[k] = strings.Join(node, ", ")
+	// }
+
+	for k, nodes := range storedIterationResult[iteration-1] {
+		var node []string
+		for _, v := range nodes {
+			node = append(node, strconv.Itoa(v.ID))
+		}
+
+		fmt.Println("Cluster: ", k, node)
+		//resp.Results[k] = strings.Join(node, ", ")
+	}
 
 	Write(rw, http.StatusOK, resp)
 

@@ -110,14 +110,6 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 	mapOfCentroid := make(map[string]Node, k)
 	for i, rowID := range req.InitialCentroidRowIDs {
 		id := fmt.Sprintf("C%d", i+1)
-		// if i == 0 {
-		// 	mapOfCentroid[id] = c1
-		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c1.Humidity, c1.Temperature, c1.StepCount)
-		// } else {
-		// 	c := mainNodes[indexChosen+1]
-		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c.Humidity, c.Temperature, c.StepCount)
-		// 	mapOfCentroid[id] = c
-		// }
 
 		for _, node := range mainNodes {
 			if node.ID == rowID {
@@ -129,15 +121,6 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-
-		// if i == 0 {
-		// 	mapOfCentroid[id] = c1
-		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c1.Humidity, c1.Temperature, c1.StepCount)
-		// } else {
-		// 	mapOfCentroid[id] = c2
-		// 	initialCentroids[id] = fmt.Sprintf("%.2f, %.2f, %.2f", c2.Humidity, c2.Temperature, c2.StepCount)
-		// }
-
 	}
 
 	if len(mapOfCentroid) != len(req.InitialCentroidRowIDs) {
@@ -160,6 +143,7 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 		mapOfClusterResults = make(map[string][]Node, 0) // C1 / C2 / C3
 
 		for k, v := range mainNodes {
+
 			mainNodes[k].Result = make(map[string]float64, len(mapOfCentroid))
 
 			for centroidKey, centroid := range mapOfCentroid {
@@ -248,6 +232,7 @@ func isCentroidSame(current, new Node) bool {
 
 func defineTheCluster(result map[string]float64) string {
 	// returning chosen cluster id
+
 	min := result["C1"]
 	lowestValueKey := "C1"
 	for k := range result {
@@ -256,6 +241,8 @@ func defineTheCluster(result map[string]float64) string {
 			lowestValueKey = k
 		}
 	}
+
+	fmt.Printf("results defining the cluster: %v: chosen %s \n", result, lowestValueKey)
 	return lowestValueKey
 }
 
