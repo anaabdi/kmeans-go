@@ -149,7 +149,7 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 				fmt.Printf("New Centroid: %s: %v \n", clusterNode, newCentroid)
 				mapOfCentroid[clusterNode] = newCentroid
 
-				newCentroidNodeIDs[node.ID] = true
+				newCentroidNodeIDs[newCentroid.ID] = true
 			}
 			previousTotalResult = totalResult
 
