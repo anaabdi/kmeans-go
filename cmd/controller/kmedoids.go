@@ -146,10 +146,10 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 
 			for clusterNode, node := range mapOfCentroid {
 				newCentroid := getNewCentroidKMedoids(mainNodes, node.ID, newCentroidNodeIDs)
-				fmt.Printf("New Centroid: %s: %v \n", clusterNode, newCentroid)
+				fmt.Printf("New Centroid ITERATION %d: %s: %v \n", iteration+1, clusterNode, newCentroid)
 				mapOfCentroid[clusterNode] = newCentroid
 
-				newCentroidNodeIDs[newCentroid.ID] = true
+				newCentroidNodeIDs[newCentroid.ID-1] = true
 			}
 			previousTotalResult = totalResult
 
@@ -212,8 +212,9 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 }
 
 func getRandomNumber(min, max int, otherCentroidNodeIDs map[int]bool) int {
-	rand.Seed(time.Now().UnixNano())
 	k := rand.Intn(max-min) + min
+	// fmt.Println("otherCentroidNodeIDs: ", otherCentroidNodeIDs)
+	// fmt.Println("random node id: ", k)
 
 	if otherCentroidNodeIDs[k] {
 		k = getRandomNumber(min, max, otherCentroidNodeIDs)
@@ -223,7 +224,8 @@ func getRandomNumber(min, max int, otherCentroidNodeIDs map[int]bool) int {
 }
 
 func getNewCentroidKMedoids(nodes []Node, currentNodeID int, otherCentroidNodeIDs map[int]bool) Node {
-	otherCentroidNodeIDs[currentNodeID] = true
+	otherCentroidNodeIDs[currentNodeID-1] = true
+	rand.Seed(time.Now().UnixNano())
 
 	k := getRandomNumber(0, len(nodes), otherCentroidNodeIDs)
 	return nodes[k]
