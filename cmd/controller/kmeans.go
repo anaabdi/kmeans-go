@@ -110,6 +110,8 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 	initRowIDCentroid := []int{}
 	if len(req.InitialCentroidRowIDs) == 0 {
 		initRowIDCentroid = getInitialCentroids(k)
+	} else {
+		initRowIDCentroid = req.InitialCentroidRowIDs
 	}
 
 	fmt.Println("initial row id chosen as centroid: ", initRowIDCentroid)
