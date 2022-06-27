@@ -70,12 +70,12 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.InitialCentroidRowIDs) != req.KExact {
-		log.Printf("banyak initial centroids tidak sama dengan nilai K")
-		rw.WriteHeader(http.StatusBadRequest)
-		rw.Write([]byte("banyak initial centroids tidak sama dengan nilai K\n"))
-		return
-	}
+	// if len(req.InitialCentroidRowIDs) != req.KExact {
+	// 	log.Printf("banyak initial centroids tidak sama dengan nilai K")
+	// 	rw.WriteHeader(http.StatusBadRequest)
+	// 	rw.Write([]byte("banyak initial centroids tidak sama dengan nilai K\n"))
+	// 	return
+	// }
 
 	log.Println("length of data: ", len(mainNodes))
 
@@ -107,8 +107,15 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 
 	initialCentroids := make(map[string]string, k)
 
+	initRowIDCentroid := []int{}
+	if len(req.InitialCentroidRowIDs) == 0 {
+		initRowIDCentroid = getInitialCentroids(k)
+	}
+
+	fmt.Println("initial row id chosen as centroid: ", initRowIDCentroid)
+
 	mapOfCentroid := make(map[string]Node, k)
-	for i, rowID := range req.InitialCentroidRowIDs {
+	for i, rowID := range initRowIDCentroid {
 		id := fmt.Sprintf("C%d", i+1)
 
 		for _, node := range mainNodes {
@@ -123,7 +130,7 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if len(mapOfCentroid) != len(req.InitialCentroidRowIDs) {
+	if len(mapOfCentroid) != len(initRowIDCentroid) {
 		log.Printf("Ada row id tidak ditemukan sebagai pilihan centroid awal")
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write([]byte("Ada row id tidak ditemukan sebagai pilihan centroid awal\n"))

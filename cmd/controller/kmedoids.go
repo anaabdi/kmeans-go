@@ -42,12 +42,12 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.InitialCentroidRowIDs) != req.KExact {
-		log.Printf("banyak initial centroids tidak sama dengan nilai K")
-		rw.WriteHeader(http.StatusBadRequest)
-		rw.Write([]byte("banyak initial centroids tidak sama dengan nilai K\n"))
-		return
-	}
+	// if len(req.InitialCentroidRowIDs) != req.KExact {
+	// 	log.Printf("banyak initial centroids tidak sama dengan nilai K")
+	// 	rw.WriteHeader(http.StatusBadRequest)
+	// 	rw.Write([]byte("banyak initial centroids tidak sama dengan nilai K\n"))
+	// 	return
+	// }
 
 	k := req.KExact
 	fmt.Println("K: ", k)
@@ -56,8 +56,15 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 
 	initialCentroids := make(map[string]string, k)
 
+	initRowIDCentroid := []int{}
+	if len(req.InitialCentroidRowIDs) == 0 {
+		initRowIDCentroid = getInitialCentroids(k)
+	}
+
+	fmt.Println("initial row id chosen as centroid: ", initRowIDCentroid)
+
 	mapOfCentroid := make(map[string]Node, k)
-	for i, rowID := range req.InitialCentroidRowIDs {
+	for i, rowID := range initRowIDCentroid {
 		id := fmt.Sprintf("C%d", i+1)
 
 		for _, node := range mainNodes {
@@ -71,7 +78,7 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if len(mapOfCentroid) != len(req.InitialCentroidRowIDs) {
+	if len(mapOfCentroid) != len(initRowIDCentroid) {
 		log.Printf("Ada row id tidak ditemukan sebagai pilihan centroid awal")
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write([]byte("Ada row id tidak ditemukan sebagai pilihan centroid awal\n"))
@@ -212,7 +219,9 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 }
 
 func getRandomNumber(min, max int, otherCentroidNodeIDs map[int]bool) int {
+	rand.Seed(time.Now().UnixNano())
 	k := rand.Intn(max-min) + min
+
 	// fmt.Println("otherCentroidNodeIDs: ", otherCentroidNodeIDs)
 	// fmt.Println("random node id: ", k)
 
@@ -225,7 +234,6 @@ func getRandomNumber(min, max int, otherCentroidNodeIDs map[int]bool) int {
 
 func getNewCentroidKMedoids(nodes []Node, currentNodeID int, otherCentroidNodeIDs map[int]bool) Node {
 	otherCentroidNodeIDs[currentNodeID-1] = true
-	rand.Seed(time.Now().UnixNano())
 
 	k := getRandomNumber(0, len(nodes), otherCentroidNodeIDs)
 	return nodes[k]
