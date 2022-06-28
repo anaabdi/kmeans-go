@@ -19,7 +19,9 @@ func getInitialCentroids(kExact int) []int {
 		for i := 0; i < kExact; i++ {
 			k := getRandomNumber(0, len(mainNodes), otherCentroidNodeIDs)
 
-			otherCentroidNodeIDs[k+1] = true
+			fmt.Println("k: ", k)
+
+			otherCentroidNodeIDs[k] = true
 
 			sharedInitialCentroids = append(sharedInitialCentroids, k+1)
 		}
@@ -39,7 +41,7 @@ func getInitialCentroids(kExact int) []int {
 		for i := 0; i < kExact; i++ {
 			k := getRandomNumber(0, len(mainNodes), otherCentroidNodeIDs)
 
-			otherCentroidNodeIDs[k+1] = true
+			otherCentroidNodeIDs[k] = true
 
 			sharedInitialCentroids = append(sharedInitialCentroids, k+1)
 		}
