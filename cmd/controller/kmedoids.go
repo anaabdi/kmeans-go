@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/montanaflynn/stats"
 )
 
 type KMedoidsRequest struct {
@@ -18,11 +20,13 @@ type KMedoidsRequest struct {
 }
 
 type KMedoidsResponse struct {
-	TotalCluster    int               `json:"total_cluster"`
-	TotalIteration  int               `json:"total_iteration"`
-	Duration        string            `json:"duration"`
-	InitialCentroid map[string]string `json:"initial_centroids"`
-	Results         map[string]string `json:"results"`
+	TotalCluster              int                `json:"total_cluster"`
+	TotalIteration            int                `json:"total_iteration"`
+	Duration                  string             `json:"duration"`
+	InitialCentroid           map[string]string  `json:"initial_centroids"`
+	Results                   map[string]string  `json:"results"`
+	StandarDeviationOfCluster map[string]float64 `json:"standard_deviation_clusters"`
+	HighestStandardDeviation  float64            `json:"highest_standard_deviation"`
 }
 
 func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
@@ -179,22 +183,44 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 	chosenMapOfCluterResults := storedIterationResult[chosenIteration]
 
 	resp := KMeansResponse{
-		TotalCluster:    k,
-		Duration:        fmt.Sprintf("%fs", time.Since(timeStart).Seconds()),
-		Results:         make(map[string]string, len(chosenMapOfCluterResults)),
-		InitialCentroid: initialCentroids,
-		TotalIteration:  iteration,
+		TotalCluster:              k,
+		Duration:                  fmt.Sprintf("%fs", time.Since(timeStart).Seconds()),
+		Results:                   make(map[string]string, len(chosenMapOfCluterResults)),
+		InitialCentroid:           initialCentroids,
+		TotalIteration:            iteration,
+		StandarDeviationOfCluster: make(map[string]float64, len(chosenMapOfCluterResults)),
 	}
+
+	var highestStandardDev float64
 
 	for k, nodes := range chosenMapOfCluterResults {
 		var node []string
+		var data []float64
 		for _, v := range nodes {
 			node = append(node, strconv.Itoa(v.ID))
+
+			data = append(data, float64(v.ID))
 		}
 
 		fmt.Println("Cluster: ", k, node)
 		resp.Results[k] = strings.Join(node, ", ")
+
+		// standarDeviation := calcStandardDeviation(nodes)
+		standarDeviation, _ := stats.StandardDeviationSample(data)
+		resp.StandarDeviationOfCluster[k] = math.Floor(standarDeviation*100) / 100
+
+		if highestStandardDev < standarDeviation {
+			highestStandardDev = standarDeviation
+		}
 	}
+
+	resp.HighestStandardDeviation = math.Floor(highestStandardDev*100) / 100
+
+	for k, v := range resp.StandarDeviationOfCluster {
+		fmt.Printf("Standar Deviation of Cluster %s : %.2f \n", k, v)
+	}
+
+	fmt.Printf("Highest Standar Deviation of All Cluster: %.2f \n", resp.HighestStandardDeviation)
 
 	// for k, nodes := range storedIterationResult[iteration] {
 	// 	var node []string
@@ -205,16 +231,6 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 	// 	fmt.Println("Cluster: ", k, node)
 	// 	//resp.Results[k] = strings.Join(node, ", ")
 	// }
-
-	for k, nodes := range storedIterationResult[iteration-1] {
-		var node []string
-		for _, v := range nodes {
-			node = append(node, strconv.Itoa(v.ID))
-		}
-
-		fmt.Println("Cluster: ", k, node)
-		//resp.Results[k] = strings.Join(node, ", ")
-	}
 
 	Write(rw, http.StatusOK, resp)
 

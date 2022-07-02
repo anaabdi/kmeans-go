@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/montanaflynn/stats"
 )
 
 type Node struct {
@@ -30,11 +32,13 @@ type KMeansRequest struct {
 }
 
 type KMeansResponse struct {
-	TotalCluster    int               `json:"total_cluster"`
-	TotalIteration  int               `json:"total_iteration"`
-	Duration        string            `json:"duration"`
-	InitialCentroid map[string]string `json:"initial_centroids"`
-	Results         map[string]string `json:"results"`
+	TotalCluster              int                `json:"total_cluster"`
+	TotalIteration            int                `json:"total_iteration"`
+	Duration                  string             `json:"duration"`
+	InitialCentroid           map[string]string  `json:"initial_centroids"`
+	Results                   map[string]string  `json:"results"`
+	StandarDeviationOfCluster map[string]float64 `json:"standard_deviation_clusters"`
+	HighestStandardDeviation  float64            `json:"highest_standard_deviation"`
 }
 
 func getRowIDsFromString(n string) []int {
@@ -202,22 +206,44 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 	fmt.Println("PRINTING RESULTs")
 
 	resp := KMeansResponse{
-		TotalCluster:    k,
-		Duration:        fmt.Sprintf("%fs", time.Since(timeStart).Seconds()),
-		Results:         make(map[string]string, len(mapOfClusterResults)),
-		InitialCentroid: initialCentroids,
-		TotalIteration:  iteration,
+		TotalCluster:              k,
+		Duration:                  fmt.Sprintf("%fs", time.Since(timeStart).Seconds()),
+		Results:                   make(map[string]string, len(mapOfClusterResults)),
+		InitialCentroid:           initialCentroids,
+		TotalIteration:            iteration,
+		StandarDeviationOfCluster: make(map[string]float64, len(mapOfClusterResults)),
 	}
+
+	var highestStandardDev float64
 
 	for k, nodes := range mapOfClusterResults {
 		var node []string
+		var data []float64
 		for _, v := range nodes {
 			node = append(node, strconv.Itoa(v.ID))
+
+			data = append(data, float64(v.ID))
 		}
 
 		fmt.Println("Cluster: ", k, node)
 		resp.Results[k] = strings.Join(node, ", ")
+
+		// standarDeviation := calcStandardDeviation(nodes)
+		standarDeviation, _ := stats.StandardDeviationSample(data)
+		resp.StandarDeviationOfCluster[k] = math.Floor(standarDeviation*100) / 100
+
+		if highestStandardDev < standarDeviation {
+			highestStandardDev = standarDeviation
+		}
 	}
+
+	resp.HighestStandardDeviation = math.Floor(highestStandardDev*100) / 100
+
+	for k, v := range resp.StandarDeviationOfCluster {
+		fmt.Printf("Standar Deviation of Cluster %s : %.2f \n", k, v)
+	}
+
+	fmt.Printf("Highest Standar Deviation of All Cluster: %.2f \n", resp.HighestStandardDeviation)
 
 	/*
 		# k = 2
@@ -233,6 +259,33 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 
 	Write(rw, http.StatusOK, resp)
 
+}
+
+func calcStandardDeviation(nodes []Node) float64 {
+	var sum, mean, sd float64
+	for _, v := range nodes {
+		sum += float64(v.ID)
+	}
+
+	totalNodes := float64(len(nodes))
+
+	mean = sum / totalNodes
+
+	for j := 0; j < 10; j++ {
+
+	}
+
+	for _, v := range nodes {
+		// The use of Pow math function func Pow(x, y float64) float64
+		sd += math.Pow(float64(v.ID)-mean, 2)
+	}
+
+	// The use of Sqrt math function func Sqrt(x float64) float64
+	sd = math.Sqrt(sd / totalNodes)
+
+	fmt.Println("The Standard Deviation is : ", sd)
+
+	return math.Floor(sd*100) / 100
 }
 
 func isCentroidSame(current, new Node) bool {
