@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/montanaflynn/stats"
 )
 
 type Node struct {
@@ -228,8 +226,8 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 		fmt.Println("Cluster: ", k, node)
 		resp.Results[k] = strings.Join(node, ", ")
 
-		// standarDeviation := calcStandardDeviation(nodes)
-		standarDeviation, _ := stats.StandardDeviationSample(data)
+		standarDeviation := calcStandardDeviation(nodes)
+		//standarDeviation, _ := stats.StandardDeviationSample(data)
 		resp.StandarDeviationOfCluster[k] = math.Floor(standarDeviation*100) / 100
 
 		if highestStandardDev < standarDeviation {
@@ -271,17 +269,12 @@ func calcStandardDeviation(nodes []Node) float64 {
 
 	mean = sum / totalNodes
 
-	for j := 0; j < 10; j++ {
-
-	}
-
 	for _, v := range nodes {
-		// The use of Pow math function func Pow(x, y float64) float64
 		sd += math.Pow(float64(v.ID)-mean, 2)
 	}
 
 	// The use of Sqrt math function func Sqrt(x float64) float64
-	sd = math.Sqrt(sd / totalNodes)
+	sd = math.Sqrt(sd / (totalNodes - 1))
 
 	fmt.Println("The Standard Deviation is : ", sd)
 

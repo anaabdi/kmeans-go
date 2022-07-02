@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/montanaflynn/stats"
 )
 
 type KMedoidsRequest struct {
@@ -205,8 +203,8 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 		fmt.Println("Cluster: ", k, node)
 		resp.Results[k] = strings.Join(node, ", ")
 
-		// standarDeviation := calcStandardDeviation(nodes)
-		standarDeviation, _ := stats.StandardDeviationSample(data)
+		standarDeviation := calcStandardDeviation(nodes)
+		//standarDeviation, _ := stats.StandardDeviationSample(data)
 		resp.StandarDeviationOfCluster[k] = math.Floor(standarDeviation*100) / 100
 
 		if highestStandardDev < standarDeviation {
