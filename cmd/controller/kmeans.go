@@ -275,6 +275,9 @@ func calcStandardDeviation(nodes []Node) float64 {
 
 	// The use of Sqrt math function func Sqrt(x float64) float64
 	sd = math.Sqrt(sd / (totalNodes - 1))
+	if math.IsNaN(sd) {
+		sd = 0
+	}
 
 	fmt.Println("The Standard Deviation is : ", sd)
 
