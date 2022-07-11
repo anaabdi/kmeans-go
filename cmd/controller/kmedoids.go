@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -210,25 +212,44 @@ func KMedoidsController(rw http.ResponseWriter, r *http.Request) {
 		if highestStandardDev < standarDeviation {
 			highestStandardDev = standarDeviation
 		}
+
+		go func(nodes []Node, cluster string) {
+			saveClusterToCSV("kmedoids", cluster, req.KExact, nodes)
+		}(nodes, k)
 	}
 
 	resp.HighestStandardDeviation = math.Floor(highestStandardDev*100) / 100
 
-	for k, v := range resp.StandarDeviationOfCluster {
-		fmt.Printf("Standar Deviation of Cluster %s : %.2f \n", k, v)
+	file, err := os.Create(fmt.Sprintf("files/%s%d-summary.csv", "kmedoids", req.KExact))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// write header
+	writer.Write([]string{"Total Iterasi", strconv.Itoa(resp.TotalIteration)})
+	writer.Write([]string{"Total Durasi", resp.Duration})
+
+	for c, v := range resp.InitialCentroid {
+		writer.Write([]string{fmt.Sprintf("Centroid Awal %s", c), v})
 	}
 
+	for k, v := range resp.StandarDeviationOfCluster {
+		fmt.Printf("Standar Deviation of Cluster %s : %.2f \n", k, v)
+
+		writer.Write([]string{fmt.Sprintf("Standar Deviasi %s", k), fmt.Sprintf("%.2f", v)})
+	}
+
+	for k := range resp.StandarDeviationOfCluster {
+		writer.Write([]string{fmt.Sprintf("Banyak Anggota %s", k), fmt.Sprintf("%d", len(mapOfClusterResults[k]))})
+	}
+
+	writer.Write([]string{"Standar Deviasi Tertinggi", fmt.Sprintf("%.2f", resp.HighestStandardDeviation)})
+
 	fmt.Printf("Highest Standar Deviation of All Cluster: %.2f \n", resp.HighestStandardDeviation)
-
-	// for k, nodes := range storedIterationResult[iteration] {
-	// 	var node []string
-	// 	for _, v := range nodes {
-	// 		node = append(node, strconv.Itoa(v.ID))
-	// 	}
-
-	// 	fmt.Println("Cluster: ", k, node)
-	// 	//resp.Results[k] = strings.Join(node, ", ")
-	// }
 
 	Write(rw, http.StatusOK, resp)
 

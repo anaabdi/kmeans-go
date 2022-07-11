@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -233,30 +235,75 @@ func KMeansController(rw http.ResponseWriter, r *http.Request) {
 		if highestStandardDev < standarDeviation {
 			highestStandardDev = standarDeviation
 		}
+
+		go func(nodes []Node, cluster string) {
+			saveClusterToCSV("kmeans", cluster, req.KExact, nodes)
+		}(nodes, k)
 	}
 
 	resp.HighestStandardDeviation = math.Floor(highestStandardDev*100) / 100
 
+	file, err := os.Create(fmt.Sprintf("files/%s%d-summary.csv", "kmeans", req.KExact))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// write header
+	writer.Write([]string{"Total Iterasi", strconv.Itoa(resp.TotalIteration)})
+	writer.Write([]string{"Total Durasi", resp.Duration})
+
+	for c, v := range resp.InitialCentroid {
+		writer.Write([]string{fmt.Sprintf("Centroid Awal %s", c), v})
+	}
+
 	for k, v := range resp.StandarDeviationOfCluster {
 		fmt.Printf("Standar Deviation of Cluster %s : %.2f \n", k, v)
+
+		writer.Write([]string{fmt.Sprintf("Standar Deviasi %s", k), fmt.Sprintf("%.2f", v)})
+
 	}
+
+	for k := range resp.StandarDeviationOfCluster {
+		writer.Write([]string{fmt.Sprintf("Banyak Anggota %s", k), fmt.Sprintf("%d", len(mapOfClusterResults[k]))})
+	}
+
+	writer.Write([]string{"Standar Deviasi Tertinggi", fmt.Sprintf("%.2f", resp.HighestStandardDeviation)})
 
 	fmt.Printf("Highest Standar Deviation of All Cluster: %.2f \n", resp.HighestStandardDeviation)
 
-	/*
-		# k = 2
-		# pilih centroid secara acak, C1 dan C2
-		# cek jarak masing2 data dari row 1 ke C1 dan C2
-		# sqroot (h1-c1)2 + (t1-c1)2 + (s1-c1)2
-		# sqroot (h1-c2)2 + (t1-c2)2 + (s1-c2)2
-		# hasil nya ambil yang kecil, C1 atau C2 dari masing2 row
-		# cari nilai centroid baru
-		# C1 = average of sum
-		# C2 = average of sum
-	*/
-
 	Write(rw, http.StatusOK, resp)
 
+}
+
+func saveClusterToCSV(methodName, clusterName string, kvalue int, nodes []Node) error {
+	file, err := os.Create(fmt.Sprintf("files/%s%d-%s.csv", methodName, kvalue, clusterName))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// write header
+	writer.Write([]string{"No.data", "Humidity", "Temperature", "Step"})
+	for _, node := range nodes {
+		err := writer.Write([]string{
+			fmt.Sprintf("%d", node.ID),
+			fmt.Sprintf("%.2f", node.Humidity),
+			fmt.Sprintf("%.2f", node.Temperature),
+			fmt.Sprintf("%.2f", node.StepCount),
+		})
+		if err != nil {
+			return fmt.Errorf("error when write date to file: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func calcStandardDeviation(nodes []Node) float64 {
